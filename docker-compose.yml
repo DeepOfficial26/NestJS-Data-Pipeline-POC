@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: nestjs-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: nestjs-pipeline-poc
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - nestjs-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: nestjs-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: nestjs_pipeline_poc
+      MYSQL_USER: nestjs_user
+      MYSQL_PASSWORD: nestjs_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - nestjs-network
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: nestjs-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nestjs-network
+
+  app:
+    build: .
+    container_name: nestjs-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - mysql
+      - redis
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/nestjs-pipeline-poc
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: nestjs_user
+      MYSQL_PASSWORD: nestjs_password
+      MYSQL_DATABASE: nestjs_pipeline_poc
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - nestjs-network
+
+volumes:
+  mongodb_data:
+  mysql_data:
+  redis_data:
+
+networks:
+  nestjs-network:
+    driver: bridge
